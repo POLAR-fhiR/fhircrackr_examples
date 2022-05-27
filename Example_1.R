@@ -8,11 +8,11 @@ library(dplyr)
 
 ### 1 Define FHIR search request ###
 request <- fhir_url(url = "https://mii-agiop-3p.life.uni-leipzig.de/fhir",
-                                resource = "Observation",
-                                parameters = c(
-                                  "_include" = "Observation:patient",
-                                  "code" = "http://loinc.org|3142-7, http://loinc.org|8302-2")
-                    )
+                    resource = "Observation",
+                    parameters = c(
+                      "_include" = "Observation:patient",
+                      "code" = "http://loinc.org|3142-7, http://loinc.org|8302-2")
+)
 
 
 
@@ -24,7 +24,7 @@ bundles <- fhir_search(request = request)
 # Without specifying columns
 observations <- fhir_table_description(resource = "Observation")
 
-# With explizit column specification
+# With explicit column specification
 patients <- fhir_table_description(
   resource = "Patient",
   cols = c(id = "id",
@@ -78,7 +78,7 @@ body <- fhir_body(content = list("patient" = paste(pat_ids, collapse = ","),
 
 # Create request URL
 request <- fhir_url(url = "https://mii-agiop-3p.life.uni-leipzig.de/fhir",
-                   resource = "Encounter")
+                    resource = "Encounter")
 
 ### 2 download Encounters and Conditions via POST ###
 encounter_bundles <- fhir_search(request = request, body = body)
@@ -87,24 +87,24 @@ encounter_bundles <- fhir_search(request = request, body = body)
 
 # Create table descriptions
 encounters <- fhir_table_description(resource = "Encounter",
-                       cols = c(
-                         patient = "subject/reference",
-                         diagnosis = "diagnosis/condition/reference",
-                         diagnosis.use = "diagnosis/use/coding/code")
-                       )
+                                     cols = c(
+                                       patient = "subject/reference",
+                                       diagnosis = "diagnosis/condition/reference",
+                                       diagnosis.use = "diagnosis/use/coding/code")
+)
 
 conditions <- fhir_table_description(resource = "Condition",
-                       cols = c(
-                         id = "id",
-                         code = "code/coding/code",
-                         patient = "subject/reference")
-                       )
+                                     cols = c(
+                                       id = "id",
+                                       code = "code/coding/code",
+                                       patient = "subject/reference")
+)
 
 # Combine table descriptions in one design
 design <- fhir_design(encounters, conditions)
 
 # Flatten
-tables <- fhir_crack(encounter_bundles, design = design, brackets = c("[", "]"))
+tables <- fhir_crack(encounter_bundles, design = design, brackets = c("[", "]"), sep = " $ ")
 
 # Extract Encounters and Conditions into standalone tables 
 encounters <- tables$encounters
@@ -116,6 +116,7 @@ diagnoses <- tables$conditions
 molten_encounters <- fhir_melt(indexed_data_frame = encounters, 
                                columns = c("diagnosis", "diagnosis.use"),
                                brackets = c("[", "]"),
+                               sep = " $ ",
                                all_columns = T)
 
 # Remove indices after melting
@@ -146,4 +147,4 @@ ggplot(data = result, aes(x = Hypertension, y = BMI, fill = Hypertension )) +
   theme(legend.position = "none") + 
   scale_fill_brewer(palette = "Set2") 
 
-  
+
